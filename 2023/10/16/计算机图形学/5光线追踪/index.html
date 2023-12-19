@@ -1,0 +1,197 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>5光线追踪 | C++学习笔记</title><meta name="author" content="Hawkkkkkk"><meta name="copyright" content="Hawkkkkkk"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="5光线追踪5.1占位和光栅化是两种成像的方式光栅化不能很好表示全局效果，包括软阴影光泽反射mirror（相对模糊反射glossy而言）间接光照 光栅化的特点：快，近似光线追踪：慢，精确，适合离线offline  光线定义三个假设直线传播不会碰撞光路可逆  光线生成让光线从眼睛发射出去，形成眼睛-像素光路连接像素-光源光路，看有没有物体阻挡   此时只弹射了一次，因此用Whitted-Style光线">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5光线追踪">
+<meta property="og:url" content="https://hawkkkkkk.github.io/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/5%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA/index.html">
+<meta property="og:site_name" content="C++学习笔记">
+<meta property="og:description" content="5光线追踪5.1占位和光栅化是两种成像的方式光栅化不能很好表示全局效果，包括软阴影光泽反射mirror（相对模糊反射glossy而言）间接光照 光栅化的特点：快，近似光线追踪：慢，精确，适合离线offline  光线定义三个假设直线传播不会碰撞光路可逆  光线生成让光线从眼睛发射出去，形成眼睛-像素光路连接像素-光源光路，看有没有物体阻挡   此时只弹射了一次，因此用Whitted-Style光线">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Hawkkkkkk/PicGo/img/Kevin.jpg">
+<meta property="article:published_time" content="2023-10-16T08:46:52.000Z">
+<meta property="article:modified_time" content="2023-12-19T17:16:27.231Z">
+<meta property="article:author" content="Hawkkkkkk">
+<meta property="article:tag" content="图形学">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Hawkkkkkk/PicGo/img/Kevin.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://hawkkkkkk.github.io/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/5%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '5光线追踪',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-12-20 01:16:27'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+    win.getCSS = (url,id = false) => new Promise((resolve, reject) => {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = url
+      if (id) link.id = id
+      link.onerror = reject
+      link.onload = link.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        link.onload = link.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(link)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 6.3.0"></head><body><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="https://cdn.jsdelivr.net/gh/Hawkkkkkk/PicGo/img/Kevin.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 链接</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></li><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background: transparent"><nav id="nav"><span id="blog-info"><a href="/" title="C++学习笔记"><span class="site-name">C++学习笔记</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 链接</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></li><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></li></ul></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">5光线追踪</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-10-16T08:46:52.000Z" title="发表于 2023-10-16 16:46:52">2023-10-16</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2023-12-19T17:16:27.231Z" title="更新于 2023-12-20 01:16:27">2023-12-20</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/">计算机图形学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="5光线追踪"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h3 id="5光线追踪"><a href="#5光线追踪" class="headerlink" title="5光线追踪"></a>5光线追踪</h3><h4 id="5-1占位"><a href="#5-1占位" class="headerlink" title="5.1占位"></a>5.1占位</h4><p>和光栅化是两种成像的方式<br>光栅化不能很好表示全局效果，包括<br>软阴影<br>光泽反射mirror（相对模糊反射glossy而言）<br>间接光照</p>
+<p>光栅化的特点：快，近似<br>光线追踪：慢，精确，适合离线offline</p>
+<ul>
+<li><p>光线定义<br>三个假设<br>直线传播<br>不会碰撞<br>光路可逆</p>
+</li>
+<li><p>光线生成<br>让光线从眼睛发射出去，形成眼睛-像素光路<br>连接像素-光源光路，看有没有物体阻挡</p>
+</li>
+</ul>
+<p>此时只弹射了一次，因此用Whitted-Style光线追踪，递归算法<br>光线可以继续折射和反射<br>1979年要74min，2006年要6s，2012的GPU只要1&#x2F;30s</p>
+<ul>
+<li><p>求光线和物体表面交点<br>隐式表面，求方程的解<br>显式表面<br>求光线和三角形交点：MT算法，利用重心坐标求解<br>要计算三角形数量的次数，太慢<br>解决办法：计算光线和包围盒的交点（本质是剪枝）<br>光线进入盒子时：光线进入了所有对面，进入时间取最大<br>光线出盒子时：光线离开了任一对面，离开时间取最小</p>
+<p>离开时间&lt;0：盒子在光源背后，无交点<br>离开时间&gt;0，进入时间&lt;0：光源在盒子里，有交点<br>总结：如果有焦点，则进入时间&lt;离开时间，且离开时间&gt;0</p>
+</li>
+</ul>
+<h4 id="利用包围盒加速"><a href="#利用包围盒加速" class="headerlink" title="利用包围盒加速"></a>利用包围盒加速</h4><ul>
+<li>均匀格子：把包围盒划分成一个个格子，光线与格子求交很快 </li>
+<li>空间划分：根据物体疏密更合理的分格子<br>Oct-Tree八叉树<br>KD-Tree，xyz轴轮着切<br>BSP-Tree</li>
+</ul>
+<p>KD-Tree<br>划分节点方法：<br>  划分轴：x还是y还是z<br>  划分位置：在哪划分<br>  物体不存在中间节点，存储在子节点</p>
+<p>划分后再进行求交</p>
+<p>空间划分缺点：<br>1不知道三角形和aabb是否有交集<br>2一个物体被存储在好几个叶子节点中</p>
+<ul>
+<li>物体划分&amp;BVH<br>物体划分是先分两半（物体），再求包围盒，直到包围盒内三角形小于一定数量<br>空间划分是先求包围盒，再分两半</li>
+</ul>
+<p>划分节点方法：<br>  确定划分轴<br>  找中间物体：例如按x轴将三角形重心坐标排序，找中位数n&#x2F;2</p>
+<h4 id="辐射度量学"><a href="#辐射度量学" class="headerlink" title="辐射度量学"></a>辐射度量学</h4><p>给出实际光的物理量<br>radiant energy类似能量<br>radiant flux辐射通量，类似功率Φ<br>radiant intensity光源某一方向多少功率I<br>  功率除以立体角，相当于单位方向的功率<br>  立体角w：表面积A&#x2F;r^2，空间中一个角有多大<br>  微分立体角dw&#x3D;sinθdθdΦ<br>Irradiance单位面积接收的功率E<br>radiance光线传播过程的能量，单位立体角单位面积L，注意这个立体角和表面需要垂直</p>
+<p>BRDF双向反射分布函数：表述单位表面把一个方向接收的能量反射到其他方向的分布<br>fr&#x3D;反射方向能量L&#x2F;入射方向能量E</p>
+<p>反射方程：好多个入射方向叠加后的反射方向能量Lr<br>渲染方程：反射方程+自身发光能量<br>全局光照：渲染方程可以按弹射次数分解（为什么不按能量分？镜面材质可以弹射好多次）<br>  0次：光源本身<br>  1次：直接光照<br>  2次以上：间接光照</p>
+<p>光栅化只有0次和1次<br>Whitted遇到漫反射&#x2F;模糊反射就停止了</p>
+<h4 id="蒙特卡洛路径追踪——解方程"><a href="#蒙特卡洛路径追踪——解方程" class="headerlink" title="蒙特卡洛路径追踪——解方程"></a>蒙特卡洛路径追踪——解方程</h4><p>蒙特卡洛积分：计算定积分<br>  在定义域内随机采样，当作长方形求面积</p>
+<p>路径追踪<br>  间接光照怎么办？递归<br>  ①光线数量爆炸：蒙特卡洛积分从P点一下子发出N根光线，变成N次发出1根光线（一个像素采样N次）<br>  本质是递归函数内不能有for循环<br>  ②递归停止条件：俄罗斯轮盘赌RR<br>  ③光源小的情况下算法低效：分直接光照和间接光照两种情况。<br>  直接光照：积分换元，在光源上直接蒙特卡洛积分，不需要递归和RR<br>  间接光照：如果从P点随机打出的光线打到的不是光源，递归和RR</p>
+<p>仍然存在的问题<br>如果对函数采样<br>蒙特卡洛概率函数的选择，重要性采样<br>低差异化序列<br>radiance和颜色的联系，伽马矫正</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://hawkkkkkk.github.io">Hawkkkkkk</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://hawkkkkkk.github.io/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/5%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA/">https://hawkkkkkk.github.io/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/5%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://hawkkkkkk.github.io" target="_blank">C++学习笔记</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/Hawkkkkkk/PicGo/img/Kevin.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/6%E6%9D%90%E8%B4%A8%E5%92%8C%E5%A4%96%E8%A7%82/" title="6材质和外观"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">6材质和外观</div></div></a></div><div class="next-post pull-right"><a href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/4%E5%87%A0%E4%BD%95/" title="4几何"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">4几何</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/1%E5%8F%98%E6%8D%A2/" title="1变换"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-16</div><div class="title">1变换</div></div></a></div><div><a href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/2-3%E5%85%89%E6%A0%85%E5%8C%96%E5%92%8C%E7%9D%80%E8%89%B2/" title="2-3光栅化和着色"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-16</div><div class="title">2-3光栅化和着色</div></div></a></div><div><a href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/4%E5%87%A0%E4%BD%95/" title="4几何"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-16</div><div class="title">4几何</div></div></a></div><div><a href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/6%E6%9D%90%E8%B4%A8%E5%92%8C%E5%A4%96%E8%A7%82/" title="6材质和外观"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-16</div><div class="title">6材质和外观</div></div></a></div><div><a href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/7%E9%AB%98%E7%BA%A7%E5%85%89%E7%BA%BF%E4%BC%A0%E6%92%AD%E5%92%8C%E6%9D%90%E8%B4%A8/" title="7级光线传播和材质"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-16</div><div class="title">7级光线传播和材质</div></div></a></div><div><a href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/8%E7%9B%B8%E6%9C%BA%E4%B8%8E%E9%A2%9C%E8%89%B2/" title="8相机与颜色"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-16</div><div class="title">8相机与颜色</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/Hawkkkkkk/PicGo/img/Kevin.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Hawkkkkkk</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#5%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA"><span class="toc-number">1.</span> <span class="toc-text">5光线追踪</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#5-1%E5%8D%A0%E4%BD%8D"><span class="toc-number">1.1.</span> <span class="toc-text">5.1占位</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%A9%E7%94%A8%E5%8C%85%E5%9B%B4%E7%9B%92%E5%8A%A0%E9%80%9F"><span class="toc-number">1.2.</span> <span class="toc-text">利用包围盒加速</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%BE%90%E5%B0%84%E5%BA%A6%E9%87%8F%E5%AD%A6"><span class="toc-number">1.3.</span> <span class="toc-text">辐射度量学</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%92%99%E7%89%B9%E5%8D%A1%E6%B4%9B%E8%B7%AF%E5%BE%84%E8%BF%BD%E8%B8%AA%E2%80%94%E2%80%94%E8%A7%A3%E6%96%B9%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">蒙特卡洛路径追踪——解方程</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/9%E5%8A%A8%E7%94%BB%E4%B8%8E%E4%BB%BF%E7%9C%9F/" title="9动画与仿真">9动画与仿真</a><time datetime="2023-10-16T08:46:56.000Z" title="发表于 2023-10-16 16:46:56">2023-10-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/8%E7%9B%B8%E6%9C%BA%E4%B8%8E%E9%A2%9C%E8%89%B2/" title="8相机与颜色">8相机与颜色</a><time datetime="2023-10-16T08:46:55.000Z" title="发表于 2023-10-16 16:46:55">2023-10-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/7%E9%AB%98%E7%BA%A7%E5%85%89%E7%BA%BF%E4%BC%A0%E6%92%AD%E5%92%8C%E6%9D%90%E8%B4%A8/" title="7级光线传播和材质">7级光线传播和材质</a><time datetime="2023-10-16T08:46:54.000Z" title="发表于 2023-10-16 16:46:54">2023-10-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/6%E6%9D%90%E8%B4%A8%E5%92%8C%E5%A4%96%E8%A7%82/" title="6材质和外观">6材质和外观</a><time datetime="2023-10-16T08:46:53.000Z" title="发表于 2023-10-16 16:46:53">2023-10-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/10/16/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/5%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA/" title="5光线追踪">5光线追踪</a><time datetime="2023-10-16T08:46:52.000Z" title="发表于 2023-10-16 16:46:52">2023-10-16</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2023 By Hawkkkkkk</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
